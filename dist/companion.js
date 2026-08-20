@@ -18,6 +18,16 @@ function finishTemporaryFromCompanion(){
   S.addRetake(state,finished,back);
   persist();
 }
+function finishRootFromCompanion(){
+  const f=focus();
+  if(!f || f.temporary || state.focusStack.length!==1)return;
+  clearActivationState();
+  f.status='completed';
+  f.completedAt=new Date().toISOString();
+  S.addCompletion(state,f);
+  state.focusStack=[];
+  persist();
+}
 function esc(str=''){return String(str).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function overlay(html){$('#overlay-root').innerHTML=`<div class="overlay-backdrop">${html}</div>`;bindClose()}
 function closeOverlay(){$('#overlay-root').innerHTML=''}
@@ -40,6 +50,7 @@ function render(){
   $('#comp-normal-actions').hidden = checkpointReady || !!f?.temporary;
   $('#comp-checkpoint').hidden = !checkpointReady || !!f?.temporary;
   $('#comp-temp-actions').hidden = !f?.temporary;
+  $('#comp-root-finish-actions').hidden = !f || !!f?.temporary;
   if(f?.temporary){$('#comp-finish-temp').textContent='✓ Concluí — Retomar foco anterior';}
 }
 
@@ -79,6 +90,7 @@ $('#comp-engaged').onclick=markEngagedFromCompanion;
 $('#comp-stuck').onclick=()=>{state.activation.status='stuck';state.activation.focusId=focus()?.id||null;state.activation.checkpointReady=false;persist();showMainPage('unstuck')};
 $('#comp-check-dev').onclick=showDeviation;
 $('#comp-finish-temp').onclick=finishTemporaryFromCompanion;
+$('#comp-finish-root').onclick=finishRootFromCompanion;
 $('#comp-pause').onclick=()=>{state.session.paused=!state.session.paused;persist()};
 $('#comp-hide').onclick=async()=>{
   if(window.__TAURI__?.core?.invoke){try{await window.__TAURI__.core.invoke('hide_companion');return;}catch{}}

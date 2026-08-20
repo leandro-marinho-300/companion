@@ -10,6 +10,7 @@ const defaultState = {
   interruptions: [],
   deviations: [],
   retakes: [],
+  completions: [],
   interventions: [],
   session: { startedAt: null, paused: false },
   ui: { companionPinned: true, quickOverlay: null, workOverride: null, workOverrideDate: null },
@@ -106,6 +107,20 @@ function addDeviation(state, description, decision='pending') {
 }
 
 
+
+function addCompletion(state, focus) {
+  const item = {
+    id: uid('completion'),
+    focusId: focus?.id || null,
+    focusTitle: focus?.title || null,
+    createdAt: new Date().toISOString(),
+    startedAt: focus?.startedAt || null,
+    completedAt: new Date().toISOString(),
+  };
+  state.completions.unshift(item);
+  return item;
+}
+
 function addRetake(state, fromFocus, toFocus) {
   const item = {
     id: uid('retake'),
@@ -138,5 +153,5 @@ function elapsedText(iso) {
 
 window.CompanionStore = {
   STORE_KEY, defaultState, uid, loadState, saveState, subscribeState, currentFocus, rootFocus,
-  createFocus, addInterruption, addDeviation, addRetake, formatClock, elapsedText
+  createFocus, addInterruption, addDeviation, addRetake, addCompletion, formatClock, elapsedText
 };
