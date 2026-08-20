@@ -1,8 +1,9 @@
-COMPANION 0.2.2 — CORREÇÃO DO MODAL DE TRIAGEM
+Companion 0.2.3 — correção de visibilidade do Companion compacto
 
-Correção principal:
-- O modal de confirmação de urgência agora respeita a altura da janela.
-- O conteúdo central pode rolar quando necessário.
-- Cabeçalho e botões de ação permanecem acessíveis.
+Correção:
+- elementos com atributo hidden agora ficam realmente ocultos;
+- o botão “Concluí — Retomar foco anterior” some depois da retomada;
+- o checkpoint “Conseguiu entrar?” não aparece em foco temporário nem depois de uma retomada sem ativação ativa;
+- preserva as correções 0.2.1 e 0.2.2.
 
-Inclui também todas as correções da 0.2.1.
+Envie TODO o conteúdo desta pasta para a raiz do repositório, como nas atualizações anteriores.
