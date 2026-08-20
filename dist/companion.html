@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Companion Compacto</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="companion-body">
+  <div class="companion-window">
+    <div class="companion-top" data-tauri-drag-region>
+      <img src="./owl.svg" alt="Mascote Companion" data-tauri-drag-region />
+      <div class="companion-title" data-tauri-drag-region>
+        <strong id="comp-title" data-tauri-drag-region>Sem foco ativo</strong>
+        <small id="comp-status" data-tauri-drag-region>Aguardando</small>
+      </div>
+      <div class="comp-window-actions"><button class="comp-fab" id="comp-open-main" title="Abrir janela principal">⋮</button><button class="comp-fab" id="comp-hide" title="Ocultar Companion">×</button></div>
+    </div>
+    <div class="progress"><span id="comp-progress"></span></div>
+    <div class="companion-actions" id="comp-normal-actions">
+      <button class="comp-action" id="comp-interrupt">⚡ Interrupção</button>
+      <button class="comp-action" id="comp-deviate">🛟 Desviei</button>
+    </div>
+    <div class="companion-checkpoint" id="comp-checkpoint" hidden>
+      <div class="checkpoint-label">Conseguiu entrar?</div>
+      <div class="checkpoint-actions">
+        <button id="comp-engaged">✓ Engrenei</button>
+        <button id="comp-stuck">Ainda travado</button>
+        <button id="comp-check-dev">Desviei</button>
+      </div>
+    </div>
+    <div class="comp-foot"><span id="comp-foot">Defina um foco para começar.</span><button class="comp-fab" id="comp-pause" title="Pausar">⏸</button></div>
+  </div>
+  <div id="overlay-root"></div>
+  <script src="./shared.js"></script>
+  <script src="./companion.js"></script>
+</body>
+</html>
