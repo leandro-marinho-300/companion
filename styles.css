@@ -173,3 +173,6 @@ kbd { padding:6px 9px; border-radius:8px; border:1px solid var(--border); backgr
 .companion-top[data-tauri-drag-region]:active { cursor:grabbing; }
 
 .comp-window-actions { display:flex; gap:4px; align-items:center; }
+
+.companion-actions.single{grid-template-columns:1fr}
+.comp-action.finish-temp{border-color:rgba(34,197,94,.45);color:var(--green);font-weight:800}

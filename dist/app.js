@@ -9,6 +9,16 @@ const $$ = (sel) => [...document.querySelectorAll(sel)];
 function persist() { S.saveState(state); render(); armActivationCheckpoint(); }
 function focus() { return S.currentFocus(state); }
 function rootFocus() { return S.rootFocus(state); }
+function clearActivation() {
+  if (activationTimer) { clearTimeout(activationTimer); activationTimer = null; }
+  state.activation = {
+    ...state.activation,
+    status:'idle', focusId:null, startedAt:null, checkpointDue:null, checkpointReady:false, notifiedAt:null
+  };
+}
+function returnCount() {
+  return (state.retakes?.length || 0) + state.deviations.filter(d=>d.returnedAt).length;
+}
 
 function esc(str='') {
   return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -55,8 +65,8 @@ function statusLabel(f) {
   if (state.session.paused) return ['Pausado','gray'];
   if (!f) return ['Sem foco','gray'];
   if (f.temporary) return ['Foco temporário','purple'];
-  if (state.activation.status === 'running') return ['Ativação','orange'];
-  if (state.activation.status === 'stuck') return ['Travado','orange'];
+  if (state.activation.focusId === f.id && state.activation.status === 'running') return ['Ativação','orange'];
+  if (state.activation.focusId === f.id && state.activation.status === 'stuck') return ['Travado','orange'];
   return ['Engrenado','green'];
 }
 
@@ -81,6 +91,15 @@ function render() {
   $('#help-enter').disabled = !f || blocked;
   $('#interrupt-btn').disabled = !f || blocked;
   $('#deviate-btn').disabled = !f || blocked;
+  const tempActive = !!f?.temporary && state.focusStack.length > 1;
+  const finishMain = $('#finish-temp-main');
+  if (finishMain) {
+    finishMain.hidden = !tempActive;
+    finishMain.textContent = tempActive ? `✓ Concluir e retomar ${state.focusStack[state.focusStack.length-2]?.title || 'foco anterior'}` : '✓ Concluir e retomar';
+    finishMain.disabled = blocked;
+  }
+  const checkpointCard = $('#activation-checkpoint-card');
+  if (checkpointCard) checkpointCard.hidden = !!f?.temporary;
   $('#owl-quote').textContent = !f ? 'Só precisamos começar a primeira coisa.' : f.temporary ? `Resolve isso e eu te devolvo para ${rootFocus()?.title || 'o foco anterior'}.` : state.activation.status === 'running' ? 'Sem cronômetro na sua cara. Só entra na tarefa.' : state.activation.status === 'stuck' ? 'Vamos reduzir até ficar possível.' : 'Eu fico por perto. Você faz o trabalho.';
 
   const waiting = state.interruptions.filter(i => i.status === 'waiting');
@@ -90,8 +109,9 @@ function render() {
   $('#stat-int').textContent = state.interruptions.length;
   $('#stat-temp').textContent = state.interruptions.filter(i => i.status === 'temporary-focus').length;
   $('#stat-dev').textContent = state.deviations.length;
-  $('#stat-return').textContent = state.deviations.filter(d => d.returnedAt).length;
-  $('#activation-clock').textContent = state.activation.checkpointReady ? 'Hora do check-in' : state.activation.status === 'running' ? `Silencioso · ${state.activation.durationMin} min` : 'Silencioso';
+  $('#stat-return').textContent = returnCount();
+  const activationMatches = !!f && state.activation.focusId === f.id;
+  $('#activation-clock').textContent = activationMatches && state.activation.checkpointReady ? 'Hora do check-in' : activationMatches && state.activation.status === 'running' ? `Silencioso · ${state.activation.durationMin} min` : 'Silencioso';
 
   $('#mini-interrupt-list').innerHTML = waiting.slice(0,3).map(i => `<div class="list-item"><div class="grow"><strong>${esc(i.description)}</strong><small>${S.formatClock(i.createdAt)} · ${i.triage === 'unsure' ? 'revisar depois' : 'estacionado'}</small></div><span class="pill ${i.triage==='unsure'?'blue':''}">${i.triage==='unsure'?'Não sei':'Aguardar'}</span></div>`).join('') || `<div class="empty"><img src="./owl.svg" alt=""><div>Nada aguardando. Ótimo.</div></div>`;
 
@@ -115,10 +135,10 @@ function renderPages() {
 
   $('#page-deviations').innerHTML = pageShell('Desvios','Perceber que saiu do foco já é parte da recuperação.', `<section class="card"><div class="card-body"><div class="list">${state.deviations.map(d=>`<div class="list-item"><div class="grow"><strong>${esc(d.description)}</strong><small>${S.formatClock(d.createdAt)} · anterior: ${esc(d.previousFocusTitle || '—')}</small></div><span class="pill ${d.returnedAt?'':'red'}">${d.returnedAt?'Retomado':d.decision}</span></div>`).join('') || '<div class="empty"><img src="./owl.svg"><h3>Nenhum desvio registrado</h3><p>Quando perceber um, use 🛟 Desviei.</p></div>'}</div></div></section>`);
 
-  const returns = state.deviations.filter(d=>d.returnedAt).length;
+  const returns = returnCount();
   $('#page-review').innerHTML = pageShell('Revisão','Dados para aprender padrões — sem transformar o dia em nota.', `<div class="grid two"><section class="card"><div class="card-body"><h2>Hoje</h2><div class="stats"><div class="stat"><div class="n">${state.interruptions.length}</div><div class="l">Interrupções registradas</div></div><div class="stat"><div class="n">${state.interruptions.filter(i=>i.triage==='now').length}</div><div class="l">Viraram foco temporário</div></div><div class="stat"><div class="n">${state.deviations.length}</div><div class="l">Desvios percebidos</div></div><div class="stat"><div class="n">${returns}</div><div class="l">Retomadas</div></div></div></div></section><section class="card"><div class="card-body"><div class="eyebrow">Leitura útil</div><p class="quote">O objetivo não é zerar distrações. É perceber mais cedo, proteger melhor e voltar mais rápido.</p></div></section></div>`);
 
-  $('#page-history').innerHTML = pageShell('Histórico','A V1 registra o mínimo necessário para validar o mecanismo.', `<section class="card"><div class="card-body"><div class="list"><div class="list-item"><div class="grow"><strong>Sessão atual</strong><small>Iniciada às ${S.formatClock(state.session.startedAt)}</small></div><span class="badge ${state.session.paused?'gray':'green'}">${state.session.paused?'Pausada':'Ativa'}</span></div>${state.interruptions.slice(0,8).map(i=>`<div class="list-item"><div class="grow"><strong>⚡ ${esc(i.description)}</strong><small>${S.formatClock(i.createdAt)} · ${i.triage}</small></div></div>`).join('')}${state.deviations.slice(0,8).map(d=>`<div class="list-item"><div class="grow"><strong>🛟 ${esc(d.description)}</strong><small>${S.formatClock(d.createdAt)} · ${d.decision}</small></div></div>`).join('')}</div></div></section>`);
+  $('#page-history').innerHTML = pageShell('Histórico','A V1 registra o mínimo necessário para validar o mecanismo.', `<section class="card"><div class="card-body"><div class="list"><div class="list-item"><div class="grow"><strong>Sessão atual</strong><small>Iniciada às ${S.formatClock(state.session.startedAt)}</small></div><span class="badge ${state.session.paused?'gray':'green'}">${state.session.paused?'Pausada':'Ativa'}</span></div>${state.interruptions.slice(0,8).map(i=>`<div class="list-item"><div class="grow"><strong>⚡ ${esc(i.description)}</strong><small>${S.formatClock(i.createdAt)} · ${i.triage}</small></div></div>`).join('')}${state.deviations.slice(0,8).map(d=>`<div class="list-item"><div class="grow"><strong>🛟 ${esc(d.description)}</strong><small>${S.formatClock(d.createdAt)} · ${d.decision}</small></div></div>`).join('')}${(state.retakes||[]).slice(0,8).map(r=>`<div class="list-item"><div class="grow"><strong>↩ Retomada: ${esc(r.toFocusTitle || 'foco anterior')}</strong><small>${S.formatClock(r.createdAt)} · após ${esc(r.fromFocusTitle || 'foco temporário')}</small></div></div>`).join('')}</div></div></section>`);
 
   $('#page-settings').innerHTML = pageShell('Configurações','Só o que afeta o uso cotidiano.', `<section class="card"><div class="card-body"><div class="grid two"><div><label class="eyebrow">Horário habitual</label><div class="input-row" style="margin-top:8px"><input class="input" type="time" id="set-start" value="${state.workHours.start}"><input class="input" type="time" id="set-end" value="${state.workHours.end}"></div></div><div><label class="eyebrow">Janela de ativação</label><select id="set-duration" style="margin-top:8px"><option value="3" ${state.activation.durationMin===3?'selected':''}>3 minutos</option><option value="5" ${state.activation.durationMin===5?'selected':''}>5 minutos</option><option value="10" ${state.activation.durationMin===10?'selected':''}>10 minutos</option></select></div></div><div style="margin-top:16px"><label class="eyebrow">Dias de trabalho</label><div class="day-picker" style="margin-top:8px">${[['D',0],['S',1],['T',2],['Q',3],['Q',4],['S',5],['S',6]].map(([label,day])=>`<label class="day-chip"><input type="checkbox" data-work-day="${day}" ${state.workHours.days.includes(day)?'checked':''}><span>${label}</span></label>`).join('')}</div></div><div class="native-settings"><label class="setting-row"><div><strong>Iniciar com o Windows</strong><small>Deixa o Companion disponível sem depender de lembrar de abrir.</small></div><input type="checkbox" id="set-autostart"></label><div class="setting-row"><div><strong>Posição do Companion</strong><small>A posição e o monitor são restaurados automaticamente no app desktop.</small></div><span class="badge blue">Persistente</span></div><div class="setting-row"><div><strong>Atalho global</strong><small>Captura uma interrupção de qualquer aplicativo.</small></div><kbd>Ctrl + Shift + Espaço</kbd></div></div><div style="margin-top:18px"><button class="btn primary" id="save-settings">Salvar configurações</button> <button class="btn" id="open-companion-settings">Abrir Companion</button> <button class="btn danger" id="reset-demo">Resetar dados de teste</button></div><p class="muted" id="native-status" style="margin-top:16px">Integrações nativas ficam disponíveis no aplicativo desktop.</p></div></section>`);
 
@@ -127,6 +147,8 @@ function renderPages() {
 }
 
 function goPage(name) {
+  state = S.loadState();
+  render();
   $$('.page').forEach(p=>p.classList.remove('active'));
   $(`#page-${name}`)?.classList.add('active');
   $$('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
@@ -135,14 +157,14 @@ function goPage(name) {
 function assumeFocus(title) {
   if (!title.trim()) return;
   state.focusStack = [S.createFocus(title)];
-  state.activation = { ...state.activation, status:'idle', startedAt:null, checkpointDue:null, checkpointReady:false, notifiedAt:null };
+  clearActivation();
   persist(); showToast('Foco assumido. Agora só precisamos entrar.');
 }
 
 function startActivation() {
   const f = focus(); if (!f) return;
   f.startedAt ||= new Date().toISOString(); f.status='activating';
-  state.activation.status='running'; state.activation.startedAt=new Date().toISOString();
+  state.activation.status='running'; state.activation.focusId=f.id; state.activation.startedAt=new Date().toISOString();
   state.activation.checkpointDue = new Date(Date.now()+state.activation.durationMin*60000).toISOString();
   state.activation.checkpointReady = false;
   state.activation.notifiedAt = null;
@@ -150,7 +172,7 @@ function startActivation() {
 }
 
 function markEngaged() {
-  const f=focus(); if(!f) return; f.status='engaged'; f.startedAt ||= new Date().toISOString(); state.activation.status='engaged'; state.activation.checkpointReady=false; state.activation.checkpointDue=null; persist(); showToast('Engrenou. O Companion sai da frente.');
+  const f=focus(); if(!f) return; f.status='engaged'; f.startedAt ||= new Date().toISOString(); clearActivation(); persist(); showToast('Engrenou. O Companion sai da frente.');
 }
 
 async function notifyActivationCheckpoint() {
@@ -165,12 +187,14 @@ async function notifyActivationCheckpoint() {
 
 function armActivationCheckpoint() {
   if (activationTimer) { clearTimeout(activationTimer); activationTimer = null; }
-  if (state.activation.status !== 'running' || !state.activation.checkpointDue || state.activation.checkpointReady) return;
+  const current = focus();
+  if (!current || state.activation.focusId !== current.id || state.activation.status !== 'running' || !state.activation.checkpointDue || state.activation.checkpointReady) return;
   const due = new Date(state.activation.checkpointDue).getTime();
   const wait = Math.max(0, due - Date.now());
   activationTimer = setTimeout(async () => {
     state = S.loadState();
-    if (state.activation.status !== 'running' || state.activation.checkpointReady) return;
+    const liveFocus = focus();
+    if (!liveFocus || state.activation.focusId !== liveFocus.id || state.activation.status !== 'running' || state.activation.checkpointReady) return;
     state.activation.checkpointReady = true;
     state.activation.notifiedAt = new Date().toISOString();
     S.saveState(state);
@@ -208,11 +232,20 @@ function showTriage(desc) {
 function showUrgency(desc) {
   const reasons=['Alguém está bloqueado agora','Existe prazo imediato','Existe consequência financeira / operacional','Há um problema acontecendo agora','Só parece urgente'];
   overlay(`<div class="modal"><div class="modal-header"><strong>Confirmação de urgência</strong><button class="btn icon ghost" data-close>✕</button></div><div class="modal-body"><h2 style="margin-top:0">O que acontece se isso esperar até você terminar seu foco?</h2><div class="reason-list">${reasons.map((r,i)=>`<label class="reason"><input type="radio" name="urgency" value="${i}"> <span>${r}</span></label>`).join('')}</div></div><div class="modal-footer"><button class="btn" id="urg-back">Voltar</button><button class="btn primary" id="urg-confirm">Confirmar</button></div></div>`);
-  bindOverlay(); $('#urg-back').onclick=()=>showTriage(desc); $('#urg-confirm').onclick=()=>{ const idx=Number(document.querySelector('input[name=urgency]:checked')?.value ?? -1); if(idx<0)return; if(idx===4){ S.addInterruption(state,desc,'later','Só parece urgente'); persist(); closeOverlay(); showToast('Estacionado por padrão. Importante não é igual a imediato.'); return; } const item=S.addInterruption(state,desc,'now',reasons[idx]); const temp=S.createFocus(desc,{temporary:true,source:'interruption'}); temp.startedAt=new Date().toISOString(); temp.status='engaged'; state.focusStack.push(temp); item.status='temporary-focus'; persist(); closeOverlay(); showToast('Foco temporário assumido. Seu foco anterior está preservado.'); };
+  bindOverlay(); $('#urg-back').onclick=()=>showTriage(desc); $('#urg-confirm').onclick=()=>{ const idx=Number(document.querySelector('input[name=urgency]:checked')?.value ?? -1); if(idx<0)return; if(idx===4){ S.addInterruption(state,desc,'later','Só parece urgente'); persist(); closeOverlay(); showToast('Estacionado por padrão. Importante não é igual a imediato.'); return; } const item=S.addInterruption(state,desc,'now',reasons[idx]); const temp=S.createFocus(desc,{temporary:true,source:'interruption',sourceId:item.id}); temp.startedAt=new Date().toISOString(); temp.status='engaged'; clearActivation(); state.focusStack.push(temp); item.status='temporary-focus'; persist(); closeOverlay(); showToast('Foco temporário assumido. Seu foco anterior está preservado.'); };
 }
 
 function finishTemporary() {
-  if(state.focusStack.length<2) return; const finished=state.focusStack.pop(); const linked=state.interruptions.find(i=>i.description===finished.title && i.status==='temporary-focus'); if(linked) linked.status='done'; const back=focus(); if(back){back.status='engaged'; back.startedAt ||= new Date().toISOString();} persist(); showToast(`Retomando: ${back?.title || 'foco anterior'}`);
+  if(state.focusStack.length<2) return;
+  clearActivation();
+  const finished=state.focusStack.pop();
+  const linked=state.interruptions.find(i=>(finished.sourceId && i.id===finished.sourceId) || (!finished.sourceId && i.description===finished.title && i.status==='temporary-focus'));
+  if(linked){linked.status='done'; linked.completedAt=new Date().toISOString();}
+  const back=focus();
+  if(back){back.status='engaged'; back.startedAt ||= new Date().toISOString();}
+  S.addRetake(state,finished,back);
+  persist();
+  showToast(`Retomando: ${back?.title || 'foco anterior'}`);
 }
 
 function showDeviation() {
@@ -221,17 +254,17 @@ function showDeviation() {
 }
 
 function showDeviationDecision(desc) {
-  overlay(`<div class="modal"><div class="modal-header"><strong>Recuperação</strong></div><div class="modal-body"><h2 style="margin-top:0">Isso virou realmente mais importante que seu foco anterior?</h2><p class="muted">${esc(desc)}</p><div class="option-grid"><button class="option yes" data-devdecision="yes">Sim<br><small>Priorizar</small></button><button class="option no" data-devdecision="no">Não<br><small>Foi um desvio</small></button><button class="option maybe" data-devdecision="unsure">Não sei<br><small>Avaliar</small></button></div></div></div>`); bindOverlay(); $$('[data-devdecision]').forEach(b=>b.onclick=()=>{ const dec=b.dataset.devdecision; if(dec==='no'){const d=S.addDeviation(state,desc,'returned'); d.returnedAt=new Date().toISOString(); persist(); closeOverlay(); showToast(`Retomar: ${focus()?.title}`);} else if(dec==='yes'){ const d=S.addDeviation(state,desc,'prioritized'); const temp=S.createFocus(desc,{temporary:true,source:'deviation'}); temp.startedAt=new Date().toISOString(); temp.status='engaged'; state.focusStack.push(temp); persist(); closeOverlay(); showToast('Novo foco temporário. O anterior continua preservado.'); } else showDeviationConsequence(desc); });
+  overlay(`<div class="modal"><div class="modal-header"><strong>Recuperação</strong></div><div class="modal-body"><h2 style="margin-top:0">Isso virou realmente mais importante que seu foco anterior?</h2><p class="muted">${esc(desc)}</p><div class="option-grid"><button class="option yes" data-devdecision="yes">Sim<br><small>Priorizar</small></button><button class="option no" data-devdecision="no">Não<br><small>Foi um desvio</small></button><button class="option maybe" data-devdecision="unsure">Não sei<br><small>Avaliar</small></button></div></div></div>`); bindOverlay(); $$('[data-devdecision]').forEach(b=>b.onclick=()=>{ const dec=b.dataset.devdecision; if(dec==='no'){const d=S.addDeviation(state,desc,'returned'); d.returnedAt=new Date().toISOString(); persist(); closeOverlay(); showToast(`Retomar: ${focus()?.title}`);} else if(dec==='yes'){ const d=S.addDeviation(state,desc,'prioritized'); const temp=S.createFocus(desc,{temporary:true,source:'deviation',sourceId:d.id}); temp.startedAt=new Date().toISOString(); temp.status='engaged'; clearActivation(); state.focusStack.push(temp); persist(); closeOverlay(); showToast('Novo foco temporário. O anterior continua preservado.'); } else showDeviationConsequence(desc); });
 }
 
 function showDeviationConsequence(desc) {
-  overlay(`<div class="modal"><div class="modal-header"><strong>Última checagem</strong></div><div class="modal-body"><h2 style="margin-top:0">Se você parar isso agora, existe alguma consequência concreta?</h2><div class="option-grid"><button class="option yes" data-cons="yes">Sim</button><button class="option no" data-cons="no">Não</button><button class="option maybe" data-cons="unsure">Não sei</button></div></div></div>`); bindOverlay(); $$('[data-cons]').forEach(b=>b.onclick=()=>{const v=b.dataset.cons;if(v==='yes'){ const d=S.addDeviation(state,desc,'prioritized'); const temp=S.createFocus(desc,{temporary:true,source:'deviation'}); temp.startedAt=new Date().toISOString();temp.status='engaged';state.focusStack.push(temp);} else {const d=S.addDeviation(state,desc,'returned');d.returnedAt=new Date().toISOString();} persist();closeOverlay();showToast(v==='yes'?'Foco temporário assumido.':'Incerteza não ganhou prioridade. Retome o foco anterior.');});
+  overlay(`<div class="modal"><div class="modal-header"><strong>Última checagem</strong></div><div class="modal-body"><h2 style="margin-top:0">Se você parar isso agora, existe alguma consequência concreta?</h2><div class="option-grid"><button class="option yes" data-cons="yes">Sim</button><button class="option no" data-cons="no">Não</button><button class="option maybe" data-cons="unsure">Não sei</button></div></div></div>`); bindOverlay(); $$('[data-cons]').forEach(b=>b.onclick=()=>{const v=b.dataset.cons;if(v==='yes'){ const d=S.addDeviation(state,desc,'prioritized'); const temp=S.createFocus(desc,{temporary:true,source:'deviation',sourceId:d.id}); temp.startedAt=new Date().toISOString();temp.status='engaged';clearActivation();state.focusStack.push(temp);} else {const d=S.addDeviation(state,desc,'returned');d.returnedAt=new Date().toISOString();} persist();closeOverlay();showToast(v==='yes'?'Foco temporário assumido.':'Incerteza não ganhou prioridade. Retome o foco anterior.');});
 }
 
 function showUnstuck(blockIndex=null) {
   const labels=['Parece grande demais','Não sei exatamente como entrar','Estou evitando / sem vontade','Estou com medo de fazer errado','Estou saturado / sem energia','Não faço ideia'];
   if(blockIndex===null){ goPage('unstuck'); return; }
-  state.activation.status='stuck'; state.interventions.unshift({id:S.uid('intervention'),type:labels[blockIndex],at:new Date().toISOString()}); persist();
+  state.activation.status='stuck'; state.activation.focusId=focus()?.id || null; state.interventions.unshift({id:S.uid('intervention'),type:labels[blockIndex],at:new Date().toISOString()}); persist();
   const copy=[
     ['Vamos reduzir brutalmente.','Esquece terminar. Qual é a menor ação possível agora?'],
     ['Só precisamos da porta de entrada.','O que existe imediatamente antes de você conseguir trabalhar nisso?'],
@@ -265,8 +298,9 @@ function bindDynamic() {
   $('#focus-page-start')?.addEventListener('click', startActivation);
   $('#focus-page-interrupt')?.addEventListener('click', showInterruption);
   $('#finish-temp')?.addEventListener('click', finishTemporary);
+  $('#finish-temp-main')?.addEventListener('click', finishTemporary);
   $$('[data-block]').forEach(b=>b.onclick=()=>showUnstuck(Number(b.dataset.block)));
-  $$('[data-int-start]').forEach(b=>b.onclick=()=>{const i=state.interruptions.find(x=>x.id===b.dataset.intStart);if(!i)return;i.status='temporary-focus';i.triage='now';const temp=S.createFocus(i.description,{temporary:true,source:'interruption'});temp.startedAt=new Date().toISOString();temp.status='engaged';state.focusStack.push(temp);persist();goPage('focus');});
+  $$('[data-int-start]').forEach(b=>b.onclick=()=>{const i=state.interruptions.find(x=>x.id===b.dataset.intStart);if(!i)return;i.status='temporary-focus';i.triage='now';const temp=S.createFocus(i.description,{temporary:true,source:'interruption',sourceId:i.id});temp.startedAt=new Date().toISOString();temp.status='engaged';clearActivation();state.focusStack.push(temp);persist();goPage('focus');});
   $$('[data-int-done]').forEach(b=>b.onclick=()=>{const i=state.interruptions.find(x=>x.id===b.dataset.intDone);if(i)i.status='done';persist();});
   $('#save-settings')?.addEventListener('click',async()=>{
     state.workHours.start=$('#set-start').value;
@@ -308,7 +342,8 @@ $('#end-day').onclick=()=>{setManualWorkMode(false);state.focusStack=[];state.ac
 $$('[data-activation]').forEach(b=>b.onclick=()=>{const a=b.dataset.activation;if(a==='engaged')markEngaged();if(a==='stuck')showUnstuck();if(a==='deviated')showDeviation();});
 $$('#nav button').forEach(b=>b.onclick=()=>goPage(b.dataset.page));
 window.addEventListener('storage',()=>{state=S.loadState();render();});
-window.addEventListener('companion-state',e=>{state=e.detail;render();});
+window.addEventListener('companion-state',e=>{state=e.detail;render();armActivationCheckpoint();});
+S.subscribeState?.(next=>{state=next;render();armActivationCheckpoint();});
 window.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlay(); if(e.ctrlKey&&e.shiftKey&&e.code==='Space'){e.preventDefault();showInterruption();}});
 
 if (syncWorkModeFromSchedule()) S.saveState(state);

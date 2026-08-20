@@ -1,7 +1,7 @@
 {
   "name": "companion-tdah-focus",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Desktop Companion Windows-first para ativação, proteção e recuperação de foco.",
   "scripts": {
     "tauri": "tauri",

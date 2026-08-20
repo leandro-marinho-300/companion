@@ -1,12 +1,15 @@
 const STORE_KEY = 'companion-v1-state';
+let stateChannel = null;
+try { stateChannel = new BroadcastChannel('companion-v1-sync'); } catch {}
 
 const defaultState = {
   workMode: false,
   workHours: { start: '08:00', end: '18:00', days: [1,2,3,4,5] },
   focusStack: [],
-  activation: { status: 'idle', startedAt: null, durationMin: 5, checkpointDue: null, checkpointReady: false, notifiedAt: null },
+  activation: { status: 'idle', focusId: null, startedAt: null, durationMin: 5, checkpointDue: null, checkpointReady: false, notifiedAt: null },
   interruptions: [],
   deviations: [],
+  retakes: [],
   interventions: [],
   session: { startedAt: null, paused: false },
   ui: { companionPinned: true, quickOverlay: null, workOverride: null, workOverrideDate: null },
@@ -38,6 +41,14 @@ function loadState() {
 function saveState(state) {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
   window.dispatchEvent(new CustomEvent('companion-state', { detail: state }));
+  try { stateChannel?.postMessage(state); } catch {}
+}
+
+function subscribeState(handler) {
+  if (!stateChannel || typeof handler !== 'function') return () => {};
+  const listener = (event) => handler(event.data);
+  stateChannel.addEventListener('message', listener);
+  return () => stateChannel.removeEventListener('message', listener);
 }
 
 function currentFocus(state) {
@@ -59,6 +70,7 @@ function createFocus(title, extra={}) {
     link: extra.link || '',
     temporary: !!extra.temporary,
     source: extra.source || 'manual',
+    sourceId: extra.sourceId || null,
   };
 }
 
@@ -93,6 +105,20 @@ function addDeviation(state, description, decision='pending') {
   return item;
 }
 
+
+function addRetake(state, fromFocus, toFocus) {
+  const item = {
+    id: uid('retake'),
+    createdAt: new Date().toISOString(),
+    fromFocusId: fromFocus?.id || null,
+    fromFocusTitle: fromFocus?.title || null,
+    toFocusId: toFocus?.id || null,
+    toFocusTitle: toFocus?.title || null,
+  };
+  state.retakes.unshift(item);
+  return item;
+}
+
 function formatClock(iso) {
   if (!iso) return '--:--';
   const d = new Date(iso);
@@ -111,6 +137,6 @@ function elapsedText(iso) {
 }
 
 window.CompanionStore = {
-  STORE_KEY, defaultState, uid, loadState, saveState, currentFocus, rootFocus,
-  createFocus, addInterruption, addDeviation, formatClock, elapsedText
+  STORE_KEY, defaultState, uid, loadState, saveState, subscribeState, currentFocus, rootFocus,
+  createFocus, addInterruption, addDeviation, addRetake, formatClock, elapsedText
 };

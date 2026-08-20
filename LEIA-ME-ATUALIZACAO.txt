@@ -1,0 +1,13 @@
+Companion 0.2.1 — correção do fluxo de foco temporário
+
+Corrige:
+1. Checkpoint antigo não fica preso quando nasce um foco temporário.
+2. O Companion compacto ganha “Concluí — Retomar foco anterior”.
+3. A tela Modo Trabalho ganha “Concluir e retomar” no foco temporário.
+4. Retomadas de foco temporário passam a ser registradas no resumo/histórico.
+5. Estado de ativação fica vinculado ao foco correto (focusId).
+6. Sincronização entre janela principal e Companion compacto é reforçada.
+7. Mantém as correções anteriores do Windows (sem console preto e fechamento em bandeja).
+
+Arquivos da raiz e da pasta dist estão sincronizados porque o Tauri empacota a pasta dist.
+Versão do instalador: 0.2.1.
