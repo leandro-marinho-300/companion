@@ -105,13 +105,13 @@ pub fn run() {
             set_autostart,
             notify_activation_checkpoint
         ])
-        .on_window_event(|event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
-                // O Companion é um app de bandeja: fechar a janela esconde, não encerra a sessão.
-                api.prevent_close();
-                let _ = event.window().hide();
-            }
-        })
+        .on_window_event(|window, event| {
+    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+        // O Companion é um app de bandeja: fechar a janela esconde, não encerra a sessão.
+        api.prevent_close();
+        let _ = window.hide();
+    }
+})
         .setup(|app| {
             #[cfg(desktop)]
             {
