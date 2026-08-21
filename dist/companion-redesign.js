@@ -55,6 +55,22 @@
     try { return D?.PhysicalPosition ? new D.PhysicalPosition(x, y) : null; } catch { return null; }
   }
 
+
+  function workAreaPhysical() {
+    const scale = Number(window.devicePixelRatio || 1) || 1;
+    const s = window.screen || {};
+    const left = Math.round(Number(s.availLeft || 0) * scale);
+    const top = Math.round(Number(s.availTop || 0) * scale);
+    const width = Math.round(Number(s.availWidth || s.width || 1920) * scale);
+    const height = Math.round(Number(s.availHeight || s.height || 1080) * scale);
+    return { left, top, right:left + width, bottom:top + height };
+  }
+
+  function clamp(value, min, max) {
+    if (max < min) return min;
+    return Math.min(Math.max(value, min), max);
+  }
+
   async function resizeKeepingRightEdge(width, height) {
     const win = tauriCurrentWindow();
     if (!win?.outerSize || !win?.outerPosition || !win?.setSize || !win?.setPosition) return false;
@@ -62,15 +78,19 @@
       const oldSize = await win.outerSize();
       const oldPos = await win.outerPosition();
       const right = oldPos.x + oldSize.width;
+      const centerY = oldPos.y + (oldSize.height / 2);
       const size = logicalSize(width, height);
       if (!size) return false;
 
       // A interface é dimensionada em px CSS (lógicos). Depois do resize, lemos o
-      // tamanho físico real para preservar exatamente a borda direita, inclusive
-      // em monitores com escala de 125%/150%.
+      // tamanho físico real para preservar exatamente a borda lateral e manter o
+      // Companion dentro da área útil do monitor, independente da escala do Windows.
       await win.setSize(size);
       const newSize = await win.outerSize();
-      const pos = physicalPosition(right - newSize.width, oldPos.y);
+      const area = workAreaPhysical();
+      const x = clamp(right - newSize.width, area.left, area.right - newSize.width);
+      const y = clamp(Math.round(centerY - (newSize.height / 2)), area.top, area.bottom - newSize.height);
+      const pos = physicalPosition(x, y);
       if (!pos) return false;
       await win.setPosition(pos);
       return true;
