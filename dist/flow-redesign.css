@@ -281,3 +281,16 @@ body[data-flow-locked="true"] #deviate-btn { opacity:.45; }
   .flow-foot { flex-wrap:wrap; }
   .flow-foot .flow-btn { flex:1; }
 }
+
+/* Phase 3.1 — compact triage polish
+   Preserve the approved 3-choice triage layout in the compact window.
+   At 430px the three short choices fit comfortably and avoid an unnecessary scrollbar. */
+body.companion-redesign[data-flow-active="true"] .flow-choices {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+body.companion-redesign[data-flow-active="true"] .flow-choice {
+  min-height: 72px;
+  padding: 11px 9px;
+}
+body.companion-redesign[data-flow-active="true"] .flow-choice strong { font-size:13px; }
+body.companion-redesign[data-flow-active="true"] .flow-choice span { font-size:9px; }
