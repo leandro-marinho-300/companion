@@ -3,96 +3,154 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
   <title>Companion — TDAH Focus</title>
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./redesign.css" />
 </head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="./owl.svg" alt="Mascote Companion" />
-        <div><strong>Companion</strong><span>TDAH FOCUS</span></div>
+<body class="real-app">
+  <div class="app-window real-window">
+    <aside class="app-sidebar">
+      <div id="nav">
+        <div class="app-logo">
+          <div class="app-logo-brand">
+            <img src="./owl.svg" alt="Mascote Companion" />
+            <div><strong>Companion</strong><span>TDAH FOCUS</span></div>
+          </div>
+          <button class="app-settings-btn" data-page="settings" aria-label="Abrir Configurações" title="Configurações">⚙️</button>
+        </div>
+
+        <nav class="app-nav" aria-label="Navegação principal">
+          <button class="active" data-page="work"><span class="nav-icon">⚡</span><span>Modo Trabalho</span></button>
+          <button data-page="interruptions"><span class="nav-icon">📥</span><span>Interrupções</span><span class="nav-count" id="nav-interrupt-count">0</span></button>
+          <button data-page="review"><span class="nav-icon">📊</span><span>Revisão</span></button>
+          <button data-page="history"><span class="nav-icon">🕘</span><span>Histórico</span></button>
+        </nav>
+
+        <!-- Mantidos apenas para compatibilidade com a lógica atual; não aparecem na navegação. -->
+        <div class="legacy-nav-area" aria-hidden="true">
+          <button class="legacy-nav" data-page="focus">Foco Atual</button>
+          <button class="legacy-nav" data-page="activate">Ativação</button>
+          <button class="legacy-nav" data-page="unstuck">Destravar</button>
+          <button class="legacy-nav" data-page="deviations">Desvios <span id="nav-dev-count">0</span></button>
+        </div>
       </div>
-      <nav class="nav" id="nav">
-        <button class="active" data-page="work">⚡ <span>Modo Trabalho</span></button>
-        <button data-page="focus">🎯 <span>Foco Atual</span></button>
-        <button data-page="activate">✨ <span>Ativação</span></button>
-        <button data-page="unstuck">🧩 <span>Destravar</span></button>
-        <button data-page="interruptions">📥 <span>Interrupções</span><span class="count" id="nav-interrupt-count">0</span></button>
-        <button data-page="deviations">🛟 <span>Desvios</span><span class="count" id="nav-dev-count">0</span></button>
-        <button data-page="review">📊 <span>Revisão</span></button>
-        <button data-page="history">🕘 <span>Histórico</span></button>
-        <button data-page="settings">⚙️ <span>Configurações</span></button>
-      </nav>
-      <section class="work-card">
+
+      <section class="session-card" id="session-card">
         <div class="row">
-          <div><strong>Modo Trabalho</strong><div class="muted" style="font-size:12px;margin-top:4px" id="work-range">08:00 – 18:00</div></div>
+          <div>
+            <div class="session-title">Modo Trabalho</div>
+            <small><span id="work-range">08:00 – 18:00</span></small>
+          </div>
           <button class="toggle on" id="work-toggle" aria-label="Alternar Modo Trabalho"></button>
         </div>
-        <div class="muted" style="font-size:12px;margin-top:10px">Sessão: <span id="session-start">--:--</span></div>
-        <button class="btn ghost" id="pause-work" style="width:100%;margin-top:12px">⏸ Pausar</button>
+        <div class="session-meta">Sessão iniciada às <strong id="session-start">--:--</strong></div>
+        <button class="btn session-action ghost" id="pause-work">⏸ Pausar</button>
+        <button class="session-end" id="end-day">Encerrar dia</button>
       </section>
     </aside>
 
-    <main class="main">
+    <main class="app-main">
       <section class="page active" id="page-work">
-        <header class="topbar">
-          <div><div class="eyebrow">Companion V1</div><h1>Modo Trabalho <span class="badge green" id="work-badge">Ativo</span></h1><p>Menos decisões quando está difícil. Mais clareza quando precisa voltar.</p></div>
-          <div style="display:flex;gap:10px"><button class="btn" id="open-companion">🖥 Abrir Companion</button><button class="btn danger" id="end-day">Encerrar dia</button></div>
-        </header>
+        <div class="app-pagebar">
+          <div>
+            <div class="title-row"><h2>Modo Trabalho</h2><span class="badge green" id="work-badge">Ativo</span></div>
+            <p class="subtitle" id="work-subtitle">Vamos escolher uma coisa para proteger agora.</p>
+          </div>
+          <div class="page-meta" id="today-label">Hoje</div>
+        </div>
 
-        <div class="grid two">
-          <div class="grid">
-            <section class="card" id="entry-card">
-              <div class="card-header"><div><div class="eyebrow">Antes de entrar no dia</div><h2 style="margin:6px 0 0">O que precisa começar agora?</h2></div></div>
-              <div class="card-body">
-                <div class="input-row"><input class="input" id="focus-input" placeholder="Digite sua intenção de foco..." /><button class="btn primary" id="assume-focus">Assumir este foco →</button></div>
-                <button class="btn ghost" id="dont-know" style="margin-top:10px">❔ Não sei qual é ainda</button>
+        <div class="layout home-layout">
+          <div class="stack">
+            <section class="card accent" id="entry-card">
+              <div class="card-label">Próximo foco</div>
+              <h3>O que vamos proteger agora?</h3>
+              <p>Não precisa organizar o dia inteiro. Só declare a próxima coisa que merece alguns minutos de atenção.</p>
+              <input class="input" id="focus-input" placeholder="Ex.: Fechar folha AGEA" />
+              <div class="btn-row">
+                <button class="btn primary" id="assume-focus">Assumir foco →</button>
+                <button class="btn ghost" id="dont-know">Não sei qual é ainda</button>
               </div>
             </section>
 
-            <section class="card" id="current-focus-card">
-              <div class="card-body focus-card">
+            <section class="card real-focus-card" id="current-focus-card" hidden>
+              <div class="focus-card-top">
                 <div>
-                  <div class="eyebrow">Foco atual <span class="badge green" id="focus-status" style="margin-left:8px">Engrenado</span></div>
+                  <div class="card-label">Foco atual</div>
                   <div class="focus-title" id="focus-title">Nenhum foco declarado</div>
-                  <div class="muted" id="focus-subtitle">Declare uma intenção para começar.</div>
-                  <div class="focus-meta"><span>Primeira ação: <b id="focus-action">—</b></span><span>Desde: <b id="focus-since">—</b></span></div>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-                    <button class="btn primary" id="start-focus">▶ Começar</button>
-                    <button class="btn" id="help-enter">Me ajuda a entrar</button>
-                    <button class="btn" id="interrupt-btn">⚡ Interrupção</button>
-                    <button class="btn" id="deviate-btn">🛟 Desviei</button>
-                    <button class="btn success" id="finish-temp-main" hidden>✓ Concluir e retomar</button>
+                  <div class="focus-meta" id="focus-meta-line">
+                    <span class="badge gray" id="focus-status">Sem foco</span>
+                    <span id="focus-since-wrap">Desde <strong id="focus-since">—</strong></span>
                   </div>
                 </div>
-                <div class="owl-wrap"><div style="text-align:center"><img src="./owl.svg" alt="Mascote" /><div class="quote" id="owl-quote">Só precisamos começar a primeira coisa.</div></div></div>
+              </div>
+              <p class="focus-subtitle" id="focus-subtitle">Declare uma intenção para começar.</p>
+              <div class="micro-step" id="focus-action-wrap" hidden>
+                <span>Primeiro passo</span>
+                <strong id="focus-action">—</strong>
+              </div>
+              <div class="focus-cycle" id="focus-cycle" hidden>
+                <div class="progress-line green"><span id="focus-cycle-bar" style="width:38%"></span></div>
+                <div class="progress-caption"><span id="focus-cycle-copy">Foco em andamento</span><span>o Companion fica por perto</span></div>
+              </div>
+              <div class="btn-row real-focus-actions" id="focus-actions">
+                <button class="btn primary" id="start-focus">▶ Começar</button>
+                <button class="btn" id="help-enter">Me ajuda a entrar</button>
+                <button class="btn" id="interrupt-btn">⚡ Interrupção</button>
+                <button class="btn" id="deviate-btn">🛟 Desviei</button>
+                <button class="btn success" id="finish-temp-main" hidden>✓ Concluir foco</button>
               </div>
             </section>
 
-            <section class="card" id="activation-checkpoint-card">
-              <div class="card-header"><div><div class="eyebrow">Checkpoint de ativação</div><h3 style="margin:5px 0 0">Conseguiu entrar?</h3></div><span class="badge orange" id="activation-clock">Silencioso</span></div>
-              <div class="card-body activation-actions">
-                <button class="action-card green" data-activation="engaged">🟢 <strong>Engrenei</strong><small>Entrei no foco</small></button>
-                <button class="action-card yellow" data-activation="stuck">🟡 <strong>Ainda travado</strong><small>Preciso de ajuda</small></button>
-                <button class="action-card blue" data-activation="deviated">🔵 <strong>Desviei</strong><small>Fui para outra coisa</small></button>
+            <section class="card activation-check" id="activation-checkpoint-card" hidden>
+              <div class="state-card-top">
+                <div>
+                  <div class="card-label">Check-in de ativação</div>
+                  <h4>Conseguiu entrar na tarefa?</h4>
+                </div>
+                <span class="badge yellow" id="activation-clock">Silencioso</span>
+              </div>
+              <p>O objetivo aqui não é terminar. É só perceber se você conseguiu atravessar a porta de entrada.</p>
+              <div class="activation-actions">
+                <button class="action-card green" data-activation="engaged"><strong>✓ Sim, entrei</strong><small>Continuar no foco</small></button>
+                <button class="action-card yellow" data-activation="stuck"><strong>Ainda não</strong><small>Me ajuda a destravar</small></button>
+                <button class="action-card blue" data-activation="deviated"><strong>🛟 Desviei</strong><small>Recuperar o foco</small></button>
               </div>
             </section>
+
+            <div class="helper orange" id="home-helper">
+              <img src="./owl.svg" alt="Mascote Companion" />
+              <div><strong id="helper-title">Um foco por vez.</strong><span id="owl-quote">Só precisamos começar a primeira coisa.</span></div>
+            </div>
           </div>
 
-          <aside class="grid">
-            <section class="card"><div class="card-header"><h3 style="margin:0">Resumo do dia</h3></div><div class="card-body stats">
-              <div class="stat"><div class="n" id="stat-int">0</div><div class="l">Interrupções</div></div>
-              <div class="stat"><div class="n" id="stat-temp">0</div><div class="l">Focos temporários</div></div>
-              <div class="stat"><div class="n" id="stat-dev">0</div><div class="l">Desvios</div></div>
-              <div class="stat"><div class="n" id="stat-return">0</div><div class="l">Retomadas</div></div>
-            </div></section>
-            <section class="card"><div class="card-header"><h3 style="margin:0">Caixa de Interrupções</h3><span class="badge orange" id="box-count">0</span></div><div class="card-body"><div class="list" id="mini-interrupt-list"></div><button class="btn" data-go="interruptions" style="width:100%;margin-top:12px">Ver caixa</button></div></section>
-            <section class="card"><div class="card-body"><div class="eyebrow">Dica rápida</div><p class="quote">Não precisa ser perfeito. Só precisa começar. O Companion fica perto sem virar mais uma distração.</p></div></section>
+          <aside class="stack">
+            <section class="card today-card">
+              <div class="card-label">Hoje</div>
+              <h4>Seu foco não precisa ser perfeito.</h4>
+              <div class="metric-grid real-metrics">
+                <div class="metric"><strong id="stat-completed">0</strong><span>focos concluídos</span></div>
+                <div class="metric"><strong id="stat-return">0</strong><span>retomadas</span></div>
+                <div class="metric"><strong id="stat-int">0</strong><span>interrupções</span></div>
+                <div class="metric"><strong id="stat-dev">0</strong><span>desvios percebidos</span></div>
+              </div>
+              <span id="stat-temp" class="hidden-metric" aria-hidden="true">0</span>
+            </section>
+
+            <section class="card soft interruption-card">
+              <div class="side-heading">
+                <div><div class="card-label">Caixa de interrupções</div><h4>Guardado para depois</h4></div>
+                <span class="tiny-pill orange" id="box-count">0</span>
+              </div>
+              <p>O que surgir fica aqui sem precisar tomar seu foco agora.</p>
+              <div class="list mini-list" id="mini-interrupt-list"></div>
+              <button class="btn ghost side-full-btn" data-go="interruptions">Ver caixa</button>
+            </section>
           </aside>
         </div>
       </section>
 
+      <!-- Fluxos atuais continuam disponíveis enquanto migramos a experiência por etapas. -->
       <section class="page" id="page-focus"></section>
       <section class="page" id="page-activate"></section>
       <section class="page" id="page-unstuck"></section>
@@ -104,8 +162,11 @@
     </main>
   </div>
 
+  <!-- A lógica atual referencia este controle diretamente. Fica invisível porque a abertura manual migrou para Configurações. -->
+  <button id="open-companion" hidden aria-hidden="true"></button>
   <div id="overlay-root"></div>
   <script src="./shared.js"></script>
   <script src="./app.js"></script>
+  <script src="./redesign-ui.js"></script>
 </body>
 </html>
