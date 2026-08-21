@@ -294,3 +294,39 @@ body.companion-redesign[data-flow-active="true"] .flow-choice {
 }
 body.companion-redesign[data-flow-active="true"] .flow-choice strong { font-size:13px; }
 body.companion-redesign[data-flow-active="true"] .flow-choice span { font-size:9px; }
+
+/* Phase 3.2 — compact urgency fit
+   The urgency decision must fit in the expanded Companion without an internal scrollbar.
+   We tighten only the dense decision content; no behavior or wording changes. */
+body.companion-redesign[data-flow-active="true"] .flow-context-line {
+  margin-bottom: 9px;
+  padding: 8px 10px;
+}
+body.companion-redesign[data-flow-active="true"] .flow-body h2 {
+  margin: 9px 0 10px;
+}
+body.companion-redesign[data-flow-active="true"] .flow-radio-list {
+  gap: 6px;
+  margin-top: 9px;
+}
+body.companion-redesign[data-flow-active="true"] .flow-radio-row {
+  padding: 8px 10px;
+  min-height: 36px;
+}
+body.companion-redesign[data-flow-active="true"] .flow-rule.orange {
+  margin-top: 10px;
+  padding: 9px 10px;
+}
+
+/* Phase 3.4 — scrollbar invisível no fluxo compacto
+   Mantém a rolagem funcional caso algum monitor realmente precise dela,
+   mas não exibe uma barra decorativa quando o conteúdo já cabe. */
+body.companion-redesign[data-flow-active="true"] .flow-body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+body.companion-redesign[data-flow-active="true"] .flow-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
