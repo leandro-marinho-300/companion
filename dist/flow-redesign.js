@@ -47,6 +47,25 @@
     try { window.dispatchEvent(new Event('storage')); } catch {}
   }
 
+  // Fase 3.6: quando uma interrupção estacionada vira foco raiz pela Caixa,
+  // concluir esse foco também conclui o item de origem. O motor continua sendo
+  // o responsável pela conclusão; aqui apenas preservamos o vínculo sem duplicar regra.
+  if (!S.__companionInboxCompletionLinkPatched && typeof S.addCompletion === 'function') {
+    const originalAddCompletion = S.addCompletion.bind(S);
+    S.addCompletion = (state, completedFocus) => {
+      const completion = originalAddCompletion(state, completedFocus);
+      if (completedFocus?.source === 'interruption' && completedFocus.sourceId) {
+        const linked = state.interruptions?.find((item) => item.id === completedFocus.sourceId);
+        if (linked && linked.status === 'active-focus') {
+          linked.status = 'done';
+          linked.completedAt = new Date().toISOString();
+        }
+      }
+      return completion;
+    };
+    S.__companionInboxCompletionLinkPatched = true;
+  }
+
   function clearActivation(state) {
     state.activation = {
       ...state.activation,
@@ -336,9 +355,23 @@
     });
   }
 
+  function interruptionForFlow(state, triage, reason = '') {
+    const existing = flow?.existingItemId
+      ? state.interruptions?.find((item) => item.id === flow.existingItemId)
+      : null;
+
+    if (!existing) return S.addInterruption(state, flow.description, triage, reason);
+
+    existing.triage = triage;
+    existing.reason = reason;
+    existing.status = triage === 'now' ? 'temporary-focus' : 'waiting';
+    existing.updatedAt = new Date().toISOString();
+    return existing;
+  }
+
   function parkInterruption(triage, reason = '') {
     const state = readState();
-    const item = S.addInterruption(state, flow.description, triage, reason);
+    const item = interruptionForFlow(state, triage, reason);
     flow.itemId = item.id;
     saveState(state);
     if (triage === 'unsure') showReviewLater();
@@ -383,7 +416,7 @@
     const state = readState();
     const current = currentFocus(state);
     if (!current || current.temporary || state.focusStack.length > 1) {
-      const item = S.addInterruption(state, flow.description, 'later', reason);
+      const item = interruptionForFlow(state, 'later', reason);
       item.preventedNestedFocus = true;
       flow.itemId = item.id;
       saveState(state);
@@ -391,7 +424,7 @@
       return;
     }
 
-    const item = S.addInterruption(state, flow.description, 'now', reason);
+    const item = interruptionForFlow(state, 'now', reason);
     const temporary = S.createFocus(flow.description, {
       temporary:true,
       source:'interruption',
@@ -546,9 +579,56 @@
     setTimeout(() => toast('Foco temporário assumido. O anterior continua guardado.'), 80);
   }
 
+  async function assumeInboxInterruption(itemId) {
+    const state = readState();
+    const item = state.interruptions?.find((entry) => entry.id === itemId);
+    if (!item) return;
+
+    const active = currentFocus(state);
+    if (active) {
+      if (lockedByOtherSurface()) {
+        toast('A triagem já está aberta na outra janela.');
+        return;
+      }
+      flow = {
+        kind:'interruption',
+        description:item.description,
+        selected:null,
+        existingItemId:item.id,
+        source:'inbox'
+      };
+      await showInterruptionTriage();
+      return;
+    }
+
+    // Sem foco ativo, “Assumir agora” pode começar normalmente: não é interrupção
+    // de outro foco e portanto não precisa virar foco temporário.
+    const nextFocus = S.createFocus(item.description, {
+      source:'interruption',
+      sourceId:item.id
+    });
+    nextFocus.startedAt = new Date().toISOString();
+    nextFocus.status = 'engaged';
+    clearActivation(state);
+    state.focusStack = [nextFocus];
+    item.triage = 'now';
+    item.status = 'active-focus';
+    item.assumedAt = new Date().toISOString();
+    saveState(state);
+    toast('Foco assumido. Agora ele é sua intenção principal.');
+  }
+
   function handleExecutionClick(event) {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
+
+    const inboxAssume = target.closest('[data-int-start]');
+    if (inboxAssume) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      assumeInboxInterruption(inboxAssume.dataset.intStart);
+      return;
+    }
 
     const interrupt = target.closest('#interrupt-btn, #focus-page-interrupt, #comp-interrupt');
     const deviation = target.closest('#deviate-btn, #comp-deviate, #comp-temp-deviate, #comp-check-dev, [data-activation="deviated"]');
