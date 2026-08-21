@@ -172,3 +172,25 @@ html.companion-redesign-root body.companion-redesign {
 body.companion-redesign[data-display-mode="collapsed"] {
   background: transparent !important;
 }
+
+
+/* Phase 2.2 — janela recolhida sem área invisível ao redor.
+   A janela nativa passa a ter exatamente o mesmo tamanho da lingueta. */
+html.companion-redesign-root[data-display-mode="collapsed"],
+html.companion-redesign-root[data-display-mode="collapsed"] body.companion-redesign {
+  width:74px !important;
+  height:182px !important;
+  min-width:74px !important;
+  min-height:182px !important;
+  max-width:74px !important;
+  max-height:182px !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:#0d141c !important;
+}
+body.companion-redesign[data-display-mode="collapsed"] .compact-edge-tab {
+  width:74px;
+  height:182px;
+  margin:0;
+  box-shadow:none;
+}

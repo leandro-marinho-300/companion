@@ -5,7 +5,7 @@
   let lastSignature = '';
   let collapseTimer = null;
   let currentDisplay = 'expanded';
-  let fullWindowSize = { width: 430, height: 285 };
+  const fullWindowSize = { width: 430, height: 285 };
   const DISPLAY_KEY = 'companion:displayMode';
 
   function nowFocusState() {
@@ -84,7 +84,12 @@
     if (mode === currentDisplay) return;
     currentDisplay = mode;
     body.dataset.displayMode = mode;
-    if (mode === 'collapsed') await resizeKeepingRightEdge(78, 196);
+    document.documentElement.dataset.displayMode = mode;
+    const win = tauriCurrentWindow();
+    if (win?.setShadow) {
+      try { await win.setShadow(mode !== 'collapsed'); } catch {}
+    }
+    if (mode === 'collapsed') await resizeKeepingRightEdge(74, 182);
     else await resizeKeepingRightEdge(fullWindowSize.width, fullWindowSize.height);
   }
 
@@ -158,12 +163,10 @@
   }
 
   async function captureInitialWindowSize() {
-    const win = tauriCurrentWindow();
-    if (!win?.outerSize) return;
-    try {
-      const s = await win.outerSize();
-      if (s.width > 200) fullWindowSize = { width:s.width, height:s.height };
-    } catch {}
+    // O tamanho expandido é deliberadamente lógico (430×285), igual ao tauri.conf.
+    // Não reutilizamos outerSize() aqui porque ele retorna pixels físicos e gera
+    // sobra invisível em monitores com escala de 125%/150%.
+    return;
   }
 
   function wire() {
