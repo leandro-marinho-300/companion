@@ -45,9 +45,9 @@
     } catch { return null; }
   }
 
-  function physicalSize(width, height) {
+  function logicalSize(width, height) {
     const D = window.__TAURI__?.dpi;
-    try { return D?.PhysicalSize ? new D.PhysicalSize(width, height) : null; } catch { return null; }
+    try { return D?.LogicalSize ? new D.LogicalSize(width, height) : null; } catch { return null; }
   }
 
   function physicalPosition(x, y) {
@@ -62,10 +62,16 @@
       const oldSize = await win.outerSize();
       const oldPos = await win.outerPosition();
       const right = oldPos.x + oldSize.width;
-      const size = physicalSize(width, height);
-      const pos = physicalPosition(right - width, oldPos.y);
-      if (!size || !pos) return false;
+      const size = logicalSize(width, height);
+      if (!size) return false;
+
+      // A interface é dimensionada em px CSS (lógicos). Depois do resize, lemos o
+      // tamanho físico real para preservar exatamente a borda direita, inclusive
+      // em monitores com escala de 125%/150%.
       await win.setSize(size);
+      const newSize = await win.outerSize();
+      const pos = physicalPosition(right - newSize.width, oldPos.y);
+      if (!pos) return false;
       await win.setPosition(pos);
       return true;
     } catch (err) {

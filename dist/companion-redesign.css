@@ -158,3 +158,17 @@ body.companion-redesign .modal { width:min(410px,100%); max-height:calc(100vh - 
 @media (max-width: 360px) {
   body.companion-redesign .checkpoint-actions { grid-template-columns:1fr; }
 }
+
+/* Phase 2.1 — correção do recolhimento nativo.
+   O HTML-base antigo pintava o elemento <html>; quando a janela não reduzia, aparecia o retângulo escuro do print. */
+html.companion-redesign-root {
+  background: transparent !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+html.companion-redesign-root body.companion-redesign {
+  min-height: 0 !important;
+}
+body.companion-redesign[data-display-mode="collapsed"] {
+  background: transparent !important;
+}
