@@ -1,4 +1,4 @@
-/* Companion · Redesign Phase 3
+/* Companion · Redesign Phase 3.5
    Fluxos aprovados de Interrupção + Desvio/Recuperação.
    Este arquivo não substitui o motor: ele usa o CompanionStore atual e intercepta
    apenas as entradas desses fluxos, tanto na janela principal quanto no compacto. */
@@ -352,7 +352,7 @@
       bodyHtml:`
         <div class="flow-result-card">
           <div class="flow-result-icon">📥</div>
-          <div><h2>${esc(flow.description)} ficou estacionada.</h2>
+          <div><h2>A tarefa “${esc(flow.description)}” foi guardada para depois.</h2>
           <p>${nested ? 'Você já está em um foco temporário, então eu não abri outro por cima. Ficou guardado para depois.' : 'Ela continua salva. Você não precisa resolver agora para não esquecer depois.'}</p></div>
         </div>
         ${resultFocusBox()}`,
