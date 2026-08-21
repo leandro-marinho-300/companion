@@ -1,0 +1,160 @@
+/* Companion Redesign · Phase 2
+   Visual aprovado no Design Lab v0.4, conectado ao motor atual sem substituir a lógica de foco. */
+
+body.companion-redesign {
+  margin: 0;
+  min-height: 100vh;
+  background: transparent !important;
+  overflow: hidden;
+  color: #f4f7fb;
+  --cr-bg: #0b1118;
+  --cr-panel: #101821;
+  --cr-panel-2: #121c26;
+  --cr-line: #2a3746;
+  --cr-line-soft: #202c39;
+  --cr-muted: #8290a3;
+  --cr-text-soft: #cbd4df;
+  --cr-orange: #ff7a1a;
+  --cr-green: #2bd781;
+  --cr-yellow: #ffc256;
+  --cr-purple: #a98af8;
+  --cr-ease: cubic-bezier(.2,.7,.2,1);
+}
+
+body.companion-redesign .companion-v2 {
+  width: 100%;
+  min-height: 100vh;
+  padding: 15px;
+  gap: 12px;
+  border-radius: 19px;
+  border: 1px solid #334152;
+  background: linear-gradient(180deg, rgba(16,24,33,.985), rgba(9,15,22,.985));
+  box-shadow: 0 24px 70px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.025);
+  transition: opacity .2s var(--cr-ease), filter .2s var(--cr-ease), border-color .2s var(--cr-ease), box-shadow .2s var(--cr-ease);
+}
+
+body.companion-redesign .companion-top { gap: 11px; }
+body.companion-redesign .companion-top img { width: 42px; height: 42px; object-fit: contain; }
+body.companion-redesign .companion-title strong { font-size: 16px; letter-spacing: -.02em; }
+body.companion-redesign .companion-title small { display:block; margin-top:3px; font-size:10px; letter-spacing:.08em; font-weight:900; }
+body.companion-redesign .comp-fab { width: 34px; height: 34px; border-radius: 10px; border:1px solid var(--cr-line); background:#101923; color:#dce3ec; }
+body.companion-redesign .comp-fab:hover { border-color:#46576b; background:#15212c; }
+
+body.companion-redesign .compact-cycle { height: 4px; background:#1f2a36; border-radius:999px; margin: 0; }
+body.companion-redesign .compact-cycle span { border-radius:999px; transition: width .3s var(--cr-ease), background .2s var(--cr-ease); }
+
+body.companion-redesign .companion-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+body.companion-redesign .companion-actions.single { grid-template-columns:1fr; }
+body.companion-redesign .comp-action {
+  min-height: 55px;
+  border-radius: 13px;
+  border:1px solid var(--cr-line);
+  background:#101923;
+  font-size:13px;
+  color:#eef3f8;
+  box-shadow:none;
+}
+body.companion-redesign .comp-action:hover { background:#15212c; border-color:#45566a; }
+body.companion-redesign .finish-root,
+body.companion-redesign .finish-temp {
+  min-height:44px;
+  color:#72ecaa;
+  border-color:rgba(43,215,129,.46);
+  background:rgba(43,215,129,.055);
+}
+body.companion-redesign .finish-root:hover,
+body.companion-redesign .finish-temp:hover { background:rgba(43,215,129,.10); border-color:rgba(43,215,129,.72); }
+body.companion-redesign .temp-deviate { min-height:42px; margin-top:0; }
+
+body.companion-redesign .compact-context {
+  display:grid;
+  gap:7px;
+  padding: 13px 14px;
+  border:1px solid var(--cr-line-soft);
+  border-radius:14px;
+  background:#0c141c;
+}
+body.companion-redesign .compact-context p { margin:0; color:var(--cr-muted); font-size:12px; line-height:1.45; }
+body.companion-redesign .compact-context strong { color:#edf2f7; font-size:14px; line-height:1.35; }
+body.companion-redesign .context-kicker { color:#718198; font-size:9px; text-transform:uppercase; letter-spacing:.12em; font-weight:900; }
+body.companion-redesign .compact-main-action {
+  margin-top:5px;
+  min-height:42px;
+  border-radius:12px;
+  border:1px solid rgba(255,122,26,.55);
+  background:linear-gradient(135deg,#ff7a1a,#ff5f1f);
+  color:white;
+  font-weight:850;
+}
+
+body.companion-redesign .attention-panel {
+  gap:10px;
+  padding:13px;
+  border:1px solid rgba(255,194,86,.38);
+  border-radius:14px;
+  background:rgba(255,194,86,.035);
+}
+body.companion-redesign .attention-panel .checkpoint-label { color:#f6f8fb; font-size:14px; text-transform:none; letter-spacing:0; }
+body.companion-redesign .attention-panel small { color:var(--cr-muted); font-size:10px; }
+body.companion-redesign .checkpoint-actions { grid-template-columns:1.1fr 1fr .9fr; }
+body.companion-redesign .checkpoint-actions button { min-height:40px; border-radius:11px; }
+
+body.companion-redesign .comp-foot { min-height:34px; color:var(--cr-muted); font-size:11px; }
+body.companion-redesign .comp-foot #comp-foot { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px; }
+
+body.companion-redesign[data-compact-state="attention"] .companion-v2 {
+  border-color:rgba(255,194,86,.46);
+  box-shadow:0 26px 78px rgba(0,0,0,.50),0 0 34px rgba(255,194,86,.075);
+}
+body.companion-redesign[data-compact-state="temporary"] .companion-v2 { border-color:rgba(169,138,248,.36); }
+
+/* Modo esmaecido: volta a 100% no hover. */
+body.companion-redesign[data-display-mode="faded"] .companion-v2 {
+  opacity:.58;
+  filter:saturate(.86);
+}
+body.companion-redesign[data-display-mode="faded"] .companion-v2:hover,
+body.companion-redesign[data-display-mode="faded"] .companion-v2:focus-within {
+  opacity:1;
+  filter:none;
+}
+
+/* Modo recolhido: a janela real pode ser redimensionada via Tauri; CSS mantém fallback visual. */
+.compact-edge-tab {
+  position:absolute;
+  inset:0;
+  width:74px;
+  height:182px;
+  margin-left:auto;
+  border:1px solid #354455;
+  border-right-color:#47596d;
+  border-radius:18px 0 0 18px;
+  background:linear-gradient(180deg,#121b25,#0d141c);
+  box-shadow:-14px 18px 46px rgba(0,0,0,.38);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  outline:none;
+  user-select:none;
+}
+.compact-edge-tab img { width:34px; height:34px; object-fit:contain; margin-bottom:4px; }
+.compact-edge-tab .edge-state-dot { width:7px; height:7px; border-radius:50%; background:var(--cr-green); box-shadow:0 0 0 4px rgba(43,215,129,.09); }
+.compact-edge-tab strong { font-size:18px; line-height:1; margin-top:5px; }
+.compact-edge-tab small { font-size:8px; color:#8090a3; text-transform:uppercase; letter-spacing:.08em; }
+.compact-edge-tab .edge-chevron { font-size:18px; color:#68778a; margin-top:3px; }
+body.companion-redesign[data-display-mode="collapsed"] .compact-edge-tab { display:flex; }
+body.companion-redesign[data-display-mode="collapsed"] .companion-v2 { display:none; }
+
+/* Estados que não devem exibir controles de execução incompatíveis. */
+body.companion-redesign[data-compact-state="empty"] .compact-cycle,
+body.companion-redesign[data-compact-state="paused"] .compact-cycle,
+body.companion-redesign[data-compact-state="unstuck"] .compact-cycle { opacity:.18; }
+
+body.companion-redesign .overlay-backdrop { border-radius:18px; }
+body.companion-redesign .modal { width:min(410px,100%); max-height:calc(100vh - 24px); }
+
+@media (max-width: 360px) {
+  body.companion-redesign .checkpoint-actions { grid-template-columns:1fr; }
+}

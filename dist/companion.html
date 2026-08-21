@@ -3,42 +3,91 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
   <title>Companion Compacto</title>
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./companion-redesign.css" />
 </head>
-<body class="companion-body">
-  <div class="companion-window">
+<body class="companion-body companion-redesign" data-compact-state="empty" data-display-mode="expanded">
+  <div class="compact-edge-tab" id="compact-edge-tab" aria-label="Expandir Companion" tabindex="0">
+    <img src="./owl.svg" alt="" />
+    <span class="edge-state-dot" aria-hidden="true"></span>
+    <strong id="compact-edge-minutes">0</strong>
+    <small>min</small>
+    <span class="edge-chevron" aria-hidden="true">‹</span>
+  </div>
+
+  <div class="companion-window companion-v2" id="companion-window">
     <div class="companion-top" data-tauri-drag-region>
       <img src="./owl.svg" alt="Mascote Companion" data-tauri-drag-region />
       <div class="companion-title" data-tauri-drag-region>
         <strong id="comp-title" data-tauri-drag-region>Sem foco ativo</strong>
-        <small id="comp-status" data-tauri-drag-region>Aguardando</small>
+        <small id="comp-status" data-tauri-drag-region>AGUARDANDO</small>
       </div>
-      <div class="comp-window-actions"><button class="comp-fab" id="comp-open-main" title="Abrir janela principal">⋮</button><button class="comp-fab" id="comp-hide" title="Ocultar Companion">×</button></div>
+      <div class="comp-window-actions">
+        <button class="comp-fab" id="comp-open-main" title="Abrir janela principal" aria-label="Abrir janela principal">⋮</button>
+        <button class="comp-fab" id="comp-hide" title="Ocultar Companion" aria-label="Ocultar Companion">×</button>
+      </div>
     </div>
-    <div class="progress"><span id="comp-progress"></span></div>
+
+    <div class="progress compact-cycle" aria-hidden="true"><span id="comp-progress"></span></div>
+
+    <div class="compact-context" id="comp-empty-panel">
+      <p>Pronto para quando você começar.</p>
+      <button class="compact-main-action" id="comp-define-focus">＋ Definir foco</button>
+    </div>
+
+    <div class="compact-context" id="comp-activation-panel" hidden>
+      <span class="context-kicker">Primeiro passo</span>
+      <strong id="comp-first-action">Só entrar na tarefa.</strong>
+      <p>Sem cronômetro na sua cara. Só comece.</p>
+    </div>
+
     <div class="companion-actions" id="comp-normal-actions">
       <button class="comp-action" id="comp-interrupt">⚡ Interrupção</button>
       <button class="comp-action" id="comp-deviate">🛟 Desviei</button>
     </div>
+
     <div class="companion-actions single" id="comp-temp-actions" hidden>
-      <button class="comp-action finish-temp" id="comp-finish-temp">✓ Concluí — Retomar foco anterior</button>
+      <button class="comp-action finish-temp" id="comp-finish-temp">✓ Concluir e retomar</button>
+      <button class="comp-action temp-deviate" id="comp-temp-deviate">🛟 Desviei</button>
     </div>
+
     <div class="companion-actions single" id="comp-root-finish-actions" hidden>
       <button class="comp-action finish-root" id="comp-finish-root">✓ Concluir foco</button>
     </div>
-    <div class="companion-checkpoint" id="comp-checkpoint" hidden>
-      <div class="checkpoint-label">Conseguiu entrar?</div>
+
+    <div class="companion-checkpoint attention-panel" id="comp-checkpoint" hidden>
+      <div class="checkpoint-label">Conseguiu entrar na tarefa?</div>
       <div class="checkpoint-actions">
-        <button id="comp-engaged">✓ Engrenei</button>
-        <button id="comp-stuck">Ainda travado</button>
-        <button id="comp-check-dev">Desviei</button>
+        <button id="comp-engaged">✓ Sim, entrei</button>
+        <button id="comp-stuck">Ainda não</button>
+        <button id="comp-check-dev">🛟 Desviei</button>
       </div>
+      <small>Sem cobrança. É só um check-in.</small>
     </div>
-    <div class="comp-foot"><span id="comp-foot">Defina um foco para começar.</span><button class="comp-fab" id="comp-pause" title="Pausar">⏸</button></div>
+
+    <div class="compact-context paused-panel" id="comp-paused-panel" hidden>
+      <strong id="comp-paused-time">Foco preservado</strong>
+      <p>Tempo e check-ins ficam congelados enquanto você pausa.</p>
+      <button class="compact-main-action" id="comp-resume-main">▶ Retomar foco</button>
+    </div>
+
+    <div class="compact-context unstuck-panel" id="comp-unstuck-panel" hidden>
+      <span class="context-kicker">Destravando</span>
+      <strong>Vamos encontrar uma forma menor de entrar.</strong>
+      <p>Continue na janela principal. Seu foco está preservado.</p>
+    </div>
+
+    <div class="comp-foot">
+      <span id="comp-foot">Defina um foco para começar.</span>
+      <button class="comp-fab" id="comp-pause" title="Pausar" aria-label="Pausar">⏸</button>
+    </div>
   </div>
+
   <div id="overlay-root"></div>
   <script src="./shared.js"></script>
   <script src="./companion.js"></script>
+  <script src="./companion-redesign.js"></script>
 </body>
 </html>

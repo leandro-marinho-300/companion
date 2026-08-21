@@ -99,3 +99,50 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch);
   else watch();
 })();
+
+/* Phase 2 · R01 — uma única superfície de execução.
+   Quando o Companion compacto está visível, a Home não duplica Interrupção/Desvio/Concluir/check-in. */
+(() => {
+  let lastVisible = null;
+
+  async function compactWindowHandle() {
+    const t = window.__TAURI__;
+    if (!t) return null;
+    try {
+      if (t.webviewWindow?.WebviewWindow?.getByLabel) return await t.webviewWindow.WebviewWindow.getByLabel('companion');
+      if (t.window?.Window?.getByLabel) return await t.window.Window.getByLabel('companion');
+      if (t.webviewWindow?.getAllWebviewWindows) {
+        const all = await t.webviewWindow.getAllWebviewWindows();
+        return all.find(w => w.label === 'companion') || null;
+      }
+      if (t.window?.getAllWindows) {
+        const all = await t.window.getAllWindows();
+        return all.find(w => w.label === 'companion') || null;
+      }
+    } catch {}
+    return null;
+  }
+
+  async function syncCompactVisibility() {
+    let visible = false;
+    try {
+      const win = await compactWindowHandle();
+      if (win?.isVisible) visible = !!(await win.isVisible());
+      else return;
+    } catch { return; }
+
+    if (visible === lastVisible) return;
+    lastVisible = visible;
+    document.body.dataset.compactVisible = visible ? 'true' : 'false';
+  }
+
+  function start() {
+    syncCompactVisibility();
+    setInterval(syncCompactVisibility, 700);
+    window.addEventListener('focus', syncCompactVisibility);
+    document.addEventListener('visibilitychange', syncCompactVisibility);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();

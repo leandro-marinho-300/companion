@@ -96,3 +96,11 @@ body.real-app{margin:0;min-height:100vh;overflow:hidden;background:#090e14;color
 .real-app .setting-row{background:transparent}.real-app .day-chip span{background:#0d151e;border-color:#2b3948}.real-app .day-chip input:checked+span{border-color:rgba(255,116,23,.55);background:rgba(255,116,23,.12);color:#ffb47d}
 
 @media(max-width:1000px){.real-app .real-window{grid-template-columns:210px minmax(0,1fr)}.real-app .app-main{padding:22px}.real-app .layout,.real-app .grid.two{grid-template-columns:1fr}}
+
+/* Phase 2 · R01 — execução não aparece em duas superfícies ao mesmo tempo. */
+body[data-compact-visible="true"] #interrupt-btn,
+body[data-compact-visible="true"] #deviate-btn,
+body[data-compact-visible="true"] #finish-temp-main,
+body[data-compact-visible="true"] #activation-checkpoint-card {
+  display:none !important;
+}
